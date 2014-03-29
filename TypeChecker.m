@@ -6,24 +6,21 @@ InfixNotation[ParsedBoxWrapper["\[Element]"],DeclareType];
 SetAttributes[DeclareType, HoldAll];
 DeclareType[symbol_, type_] := Element[symbol,type];
 
-BuildContext[c_,a_String] := Prepend[c,{a,string}];
-BuildContext[c_,a_Integer] := Prepend[c,{a,integer}];
-BuildContext[c_,a_Real] := Prepend[c,{a,real}];
-BuildContext[c_,a_Rational] := Prepend[c,{a,rational}];
-BuildContext[c_,a_Complex] := Prepend[c,{a,complex}];
-BuildContext[c_,_Element[symbol_,type_]] := Prepend[c,{symbol,type}];
+UniqueType[] := typeVariable[RandomInteger[2^32]];
 
 SetAttributes[Type, HoldAll];
-Type[a_String] := string;
-Type[a_Integer] := integer;
-Type[a_Real] := real;
-Type[a_Rational] := rational;
-Type[a_Complex] := complex;
-Type[a_Symbol] := typeVariable[a];
-Type[a_Function] := typeFunction[a,b];
-(*
-Type[a_Symbol] := Type[Evaluate[a]] /; DownValues[a] == {};
-Type[a_Symbol] := If[ValueQ[a], none, Function[#]];*)
+Type[c_,expr_] := IfJust[Lookup[c,expr],Function[Element[expr,#]],Type[expr]];
+Type[c_,_Element[symbol_,type_]] := Element[symbol,type];
+Type[c_,a_String] := Element[a,string];
+Type[c_,a_Integer] := Element[a,integer];
+Type[c_,a_Real] := Element[a,real];
+Type[c_,a_Rational] := Element[a,rational];
+Type[c_,a_Complex] := Element[a,complex];
+Type[c_,a_Symbol] := Element[a,UniqueType[]];
+Type[c_,a_Function[x_,body_]] := Element[a,typeFunction[UniqueType[], Type[c.body]]];
+Type[c_,f_[x_]] := Element[{f,x},typeApplication[Type[c,f], Type[c,x]]];
+
+Type[Function[x,x][foo]]
 
 IfJust[just[x_],f_,_] := f[x];
 IfJust[none,_,g_] := g;
@@ -51,18 +48,3 @@ FreeTypeVariables[scheme[vars_,t_]] := Complement[FreeTypeVariables[t],vars]
 
 NullSubstitution := {};
 composeSubstitution[f_,g_] := Map[Function[],g]
-
-
-"
-
-
-
-
-
-
-
-
-
-
-
-
